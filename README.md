@@ -145,4 +145,7 @@ atlasadvisor/
 ```
 
 ## RESULTS
+<img width="933" height="877" alt="Screenshot 2026-04-06 at 4 14 02 PM" src="https://github.com/user-attachments/assets/548d6306-472e-44a5-b307-0820e37dfeeb" />
+<img width="815" height="595" alt="Screenshot 2026-04-06 at 4 13 49 PM" src="https://github.com/user-attachments/assets/d3d9d53f-45af-4e64-ab7d-47d2136eb8b6" />
+
 
