@@ -37,7 +37,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     // Increment global counter — best-effort, never fails the response
     try {
       const metricsDb = await getMetricsDb();
-      await metricsDb.collection("global_stats").updateOne(
+      await metricsDb.collection<{ _id: string; totalAnalyses: number; lastUpdated: Date | null }>("global_stats").updateOne(
         { _id: "stats" },
         { $inc: { totalAnalyses: 1 }, $set: { lastUpdated: new Date() } },
         { upsert: true }

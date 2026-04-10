@@ -28,10 +28,23 @@ const SEVERITY_STYLES = {
 } as const;
 
 const CATEGORY_STYLES = {
-  index: "bg-purple-500/15 text-purple-400 border border-purple-500/30",
+  index:  "bg-purple-500/15 text-purple-400 border border-purple-500/30",
   schema: "bg-cyan-500/15 text-cyan-400 border border-cyan-500/30",
-  query: "bg-orange-500/15 text-orange-400 border border-orange-500/30",
+  query:  "bg-orange-500/15 text-orange-400 border border-orange-500/30",
 } as const;
+
+/** Maps severity + category → a human-readable performance impact claim. */
+const IMPACT_MAP: Record<string, { text: string; color: string }> = {
+  "HIGH-index":    { text: "Up to 1000× faster queries — eliminates full collection scans on large datasets",  color: "text-brand-500" },
+  "MEDIUM-index":  { text: "Significant read speedup — removes redundant or suboptimal index paths",           color: "text-brand-500/80" },
+  "LOW-index":     { text: "Lower write overhead and reduced index storage footprint",                         color: "text-slate-400" },
+  "HIGH-schema":   { text: "Prevents unbounded memory growth and storage bloat at scale",                     color: "text-amber-400" },
+  "MEDIUM-schema": { text: "Improved query selectivity and document structure consistency",                    color: "text-amber-400/80" },
+  "LOW-schema":    { text: "Better long-term maintainability and schema predictability",                       color: "text-slate-400" },
+  "HIGH-query":    { text: "Eliminates expensive server-side processing — major CPU and latency savings",      color: "text-orange-400" },
+  "MEDIUM-query":  { text: "Reduces round-trips and aggregation cost on repeated query patterns",              color: "text-orange-400/80" },
+  "LOW-query":     { text: "Minor query efficiency improvement with low implementation effort",                color: "text-slate-400" },
+};
 
 function useCopyToClipboard(text: string): { copied: boolean; copy: () => void } {
   const [copied, setCopied] = useState(false);
@@ -86,19 +99,18 @@ export function RecommendationCard({
   const [dismissed, setDismissed] = useState(false);
   const { copied, copy } = useCopyToClipboard(rec.codeExample);
 
-  const sev = SEVERITY_STYLES[rec.severity];
-  const cat = CATEGORY_STYLES[rec.category];
+  const sev    = SEVERITY_STYLES[rec.severity];
+  const cat    = CATEGORY_STYLES[rec.category];
+  const impact = IMPACT_MAP[`${rec.severity}-${rec.category}`];
 
-  // Fire viewed event once on mount — intentionally omitting deps to avoid re-firing on prop changes
+  // Fire viewed event once on mount
   useEffect(() => {
     void postEvent(sessionId, variant, "recommendation_viewed", rec);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleToggleFix(): void {
-    if (!showFix) {
-      void postEvent(sessionId, variant, "recommendation_clicked", rec);
-    }
+    if (!showFix) void postEvent(sessionId, variant, "recommendation_clicked", rec);
     setShowFix((prev) => !prev);
   }
 
@@ -118,9 +130,11 @@ export function RecommendationCard({
 
   return (
     <div
-      className={`bg-slate-800 border ${applied ? "border-brand-500/50" : "border-slate-700"} rounded-xl p-5 shadow-md transition-all duration-300 animate-fade-in`}
+      className={`bg-slate-800 border ${
+        applied ? "border-brand-500/50" : "border-slate-700"
+      } rounded-xl p-5 shadow-md transition-all duration-300 animate-fade-in`}
     >
-      {/* Header row */}
+      {/* ── Header row: severity + category + collection ── */}
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${sev.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${sev.dot}`} />
@@ -132,16 +146,27 @@ export function RecommendationCard({
         <span className="ml-auto text-xs text-slate-500 font-mono">{rec.collectionName}</span>
       </div>
 
-      {/* Title */}
+      {/* ── Title ── */}
       <h3 className={`font-semibold text-sm mb-2 ${applied ? "text-brand-500 line-through opacity-60" : "text-white"}`}>
         {applied && <span className="mr-2">✓</span>}
         {rec.title}
       </h3>
 
-      {/* Description */}
-      <p className="text-slate-400 text-sm leading-relaxed mb-4">{rec.description}</p>
+      {/* ── Description ── */}
+      <p className="text-slate-400 text-sm leading-relaxed mb-3">{rec.description}</p>
 
-      {/* Fix panel */}
+      {/* ── Impact badge ── */}
+      {impact && (
+        <div className="flex items-start gap-2 text-xs mb-4 px-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700/50">
+          <span className="mt-px shrink-0" aria-hidden="true">⚡</span>
+          <span>
+            <span className="text-slate-500 font-medium">Potential impact: </span>
+            <span className={impact.color}>{impact.text}</span>
+          </span>
+        </div>
+      )}
+
+      {/* ── Fix panel ── */}
       {showFix && (
         <div className="mb-4 animate-slide-down">
           <p className="text-slate-300 text-sm mb-3">{rec.fixSuggestion}</p>
@@ -161,7 +186,7 @@ export function RecommendationCard({
         </div>
       )}
 
-      {/* Action bar */}
+      {/* ── Action bar ── */}
       <div className="flex items-center gap-2 flex-wrap">
         <button
           id={`toggleFix-${rec.id}`}

@@ -7,21 +7,18 @@
     box-sizing: border-box;
   }
 
-  :root {
-    color-scheme: dark;
-  }
-
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
 
   body {
     margin: 0;
-    background-color: #020617; /* slate-950 */
+    @apply bg-white text-black dark:bg-slate-950 dark:text-white;
   }
 
-  /* Keep app layers above body; negative z-index on children can hide behind body otherwise */
+  /* Keep app layers above body */
   #root {
     isolation: isolate;
     min-height: 100vh;
@@ -41,5 +38,55 @@
   }
   ::-webkit-scrollbar-thumb:hover {
     background: #64748b;
+  }
+}
+
+@layer components {
+  /* ── Container padding guarantee (belt-and-suspenders over tailwind.config) ── */
+  .container {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium inline-flex justify-center items-center tracking-tight transition-all duration-200;
+  }
+  .btn-primary {
+    @apply bg-black text-white dark:bg-white dark:text-black;
+  }
+  .btn-text {
+    @apply text-black bg-transparent dark:text-white dark:bg-transparent;
+  }
+
+  /* ── Landing page primitives ── */
+  .tag {
+    @apply text-sm inline-flex border border-[#222]/10 px-3 py-1 rounded-lg tracking-tight dark:border-white/10 text-[#010D3E] dark:text-slate-300;
+  }
+
+  .section-title {
+    @apply text-center text-3xl md:text-[54px] md:leading-[60px] font-bold tracking-tighter
+           bg-gradient-to-br from-black to-[#001E80] text-transparent bg-clip-text
+           dark:from-white dark:to-[#00ED64];
+  }
+
+  .section-description {
+    @apply text-center text-[22px] leading-[30px] tracking-tight text-[#010D3E] dark:text-slate-300;
+  }
+
+  .section-heading {
+    @apply max-w-[540px] mx-auto;
+  }
+
+  /* Glassmorphism card — works in both light and dark */
+  .landing-card {
+    @apply p-10 border border-[#222222]/10 rounded-3xl
+           shadow-[0_7px_14px_#EAEAEA] bg-white
+           dark:border-white/10 dark:bg-slate-800 dark:shadow-[0_7px_14px_rgba(0,0,0,0.4)];
+  }
+
+  /* Logo ticker image */
+  .logo-ticker-img {
+    @apply h-8 w-auto;
   }
 }

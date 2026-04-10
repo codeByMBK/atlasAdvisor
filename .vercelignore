@@ -1,0 +1,9 @@
+SaaS-landing-page-main/
+backend/node_modules/
+frontend/node_modules/
+backend/dist/
+frontend/dist/
+*.png
+*.jpg
+Screenshot*
+AtlasAdvisor_Build_Prompt.txt

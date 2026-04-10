@@ -7,7 +7,7 @@ const router = Router();
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
   try {
     const db = await getMetricsDb();
-    const doc = await db.collection("global_stats").findOne({ _id: "stats" });
+    const doc = await db.collection<{ _id: string; totalAnalyses: number; lastUpdated: Date | null }>("global_stats").findOne({ _id: "stats" });
     res.json({
       totalAnalyses: (doc?.["totalAnalyses"] as number) ?? 0,
       lastUpdated: doc?.["lastUpdated"] ?? null,

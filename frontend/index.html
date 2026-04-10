@@ -43,10 +43,22 @@
     <meta name="twitter:image" content="__META_SITE_URL__/PrimaryImage.png" />
     <meta name="twitter:image:alt" content="AtlasAdvisor — MongoDB performance recommendations preview" />
 
-    <!-- Fonts -->
+    <!-- Fonts: DM Sans (landing page), Inter (app), JetBrains Mono (code) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    <!-- FOUC prevention: apply saved theme class before first paint -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('atlasadvisor_theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = saved ? saved === 'dark' : prefersDark !== false;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
