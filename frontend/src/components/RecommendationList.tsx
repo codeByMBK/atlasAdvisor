@@ -12,6 +12,12 @@ interface RecommendationListProps {
 
 const SEVERITY_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
 
+type Severity = "HIGH" | "MEDIUM" | "LOW";
+type Category = "index" | "schema" | "query";
+
+const ALL_SEVERITIES: Severity[] = ["HIGH", "MEDIUM", "LOW"];
+const ALL_CATEGORIES: Category[] = ["index", "schema", "query"];
+
 function sortBySeverity(recs: Recommendation[]): Recommendation[] {
   return [...recs].sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
@@ -38,6 +44,46 @@ const CATEGORY_ICONS: Record<string, string> = {
   query: "🔍",
 };
 
+const SEVERITY_PILL_STYLES: Record<Severity, { on: string; off: string }> = {
+  HIGH: {
+    on: "bg-red-500/15 text-red-400 border-red-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+  MEDIUM: {
+    on: "bg-amber-500/15 text-amber-400 border-amber-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+  LOW: {
+    on: "bg-blue-500/15 text-blue-400 border-blue-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+};
+
+const CATEGORY_PILL_STYLES: Record<Category, { on: string; off: string }> = {
+  index: {
+    on: "bg-purple-500/15 text-purple-400 border-purple-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+  schema: {
+    on: "bg-cyan-500/15 text-cyan-400 border-cyan-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+  query: {
+    on: "bg-orange-500/15 text-orange-400 border-orange-500/50",
+    off: "bg-transparent text-slate-500 border-slate-700 opacity-50",
+  },
+};
+
+function toggle<T>(set: Set<T>, value: T): Set<T> {
+  const next = new Set(set);
+  if (next.has(value)) {
+    if (next.size > 1) next.delete(value); // keep at least one active
+  } else {
+    next.add(value);
+  }
+  return next;
+}
+
 export function RecommendationList({
   recommendations,
   collectionsAnalysed,
@@ -47,8 +93,12 @@ export function RecommendationList({
 }: RecommendationListProps): React.ReactElement {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [activeSeverities, setActiveSeverities] = useState<Set<Severity>>(new Set(ALL_SEVERITIES));
+  const [activeCategories, setActiveCategories] = useState<Set<Category>>(new Set(ALL_CATEGORIES));
 
-  const visible = recommendations.filter((r) => !dismissed.has(r.id));
+  const visible = recommendations.filter(
+    (r) => !dismissed.has(r.id) && activeSeverities.has(r.severity) && activeCategories.has(r.category as Category)
+  );
   const highCount = recommendations.filter((r) => r.severity === "HIGH").length;
   const medCount = recommendations.filter((r) => r.severity === "MEDIUM").length;
 
@@ -60,7 +110,29 @@ export function RecommendationList({
     setApplied((prev) => new Set([...prev, id]));
   }
 
-  // Empty state
+  const allFiltersActive =
+    activeSeverities.size === ALL_SEVERITIES.length &&
+    activeCategories.size === ALL_CATEGORIES.length;
+
+  // No collections — database likely doesn't exist or is empty
+  if (collectionsAnalysed === 0) {
+    return (
+      <div className="bg-slate-800 border border-amber-500/30 rounded-xl p-8 text-center animate-fade-in">
+        <div className="w-14 h-14 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h3 className="text-amber-400 font-semibold text-lg mb-1">No collections found</h3>
+        <p className="text-slate-400 text-sm">
+          <span className="text-white font-mono">{databaseName}</span> has no collections.
+          Check that the database name is correct and that it contains data.
+        </p>
+      </div>
+    );
+  }
+
+  // Collections exist but no recommendations — genuine health pass
   if (recommendations.length === 0) {
     return (
       <div className="bg-slate-800 border border-brand-500/30 rounded-xl p-8 text-center animate-fade-in">
@@ -108,12 +180,62 @@ export function RecommendationList({
     </div>
   );
 
-  // Variant A: flat list sorted by severity 
+  // Filter pills
+  const filterBar = (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs text-slate-500 mr-1">Filter:</span>
+      {ALL_SEVERITIES.map((sev) => (
+        <button
+          key={sev}
+          type="button"
+          aria-pressed={activeSeverities.has(sev)}
+          onClick={() => setActiveSeverities((prev) => toggle(prev, sev))}
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+            activeSeverities.has(sev) ? SEVERITY_PILL_STYLES[sev].on : SEVERITY_PILL_STYLES[sev].off
+          }`}
+        >
+          {sev}
+        </button>
+      ))}
+      <span className="text-slate-700 text-xs">·</span>
+      {ALL_CATEGORIES.map((cat) => (
+        <button
+          key={cat}
+          type="button"
+          aria-pressed={activeCategories.has(cat)}
+          onClick={() => setActiveCategories((prev) => toggle(prev, cat))}
+          className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-all capitalize focus:outline-none focus:ring-2 focus:ring-brand-500 ${
+            activeCategories.has(cat) ? CATEGORY_PILL_STYLES[cat].on : CATEGORY_PILL_STYLES[cat].off
+          }`}
+        >
+          {cat}
+        </button>
+      ))}
+      {!allFiltersActive && (
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSeverities(new Set(ALL_SEVERITIES));
+            setActiveCategories(new Set(ALL_CATEGORIES));
+          }}
+          className="text-xs text-slate-500 hover:text-slate-300 underline underline-offset-2 ml-1 transition-colors"
+        >
+          Reset
+        </button>
+      )}
+    </div>
+  );
+
+  // Variant A: flat list sorted by severity
   if (variant === "A") {
     const sorted = sortBySeverity(visible);
     return (
       <div className="space-y-3 animate-fade-in">
         {summaryBar}
+        {filterBar}
+        {visible.length === 0 && (
+          <p className="text-center text-slate-500 text-sm py-6">No issues match the active filters.</p>
+        )}
         {sorted.map((rec) => (
           <RecommendationCard
             key={rec.id}
@@ -133,12 +255,16 @@ export function RecommendationList({
     );
   }
 
-  //  Variant B: grouped by category 
+  //  Variant B: grouped by category
   const groups = groupByCategory(visible);
 
   return (
     <div className="space-y-6 animate-fade-in">
       {summaryBar}
+      {filterBar}
+      {visible.length === 0 && (
+        <p className="text-center text-slate-500 text-sm py-6">No issues match the active filters.</p>
+      )}
       {(["index", "schema", "query"] as const).map((cat) => {
         const items = groups[cat] ?? [];
         if (items.length === 0) return null;

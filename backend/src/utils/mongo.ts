@@ -7,7 +7,10 @@ let cachedClient: MongoClient | null = null;
  * Reuses the module-level cached client to avoid redundant connections.
  */
 export async function getDb(uri: string, dbName: string): Promise<{ db: Db; client: MongoClient }> {
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, {
+    serverSelectionTimeoutMS: 5_000,
+    connectTimeoutMS: 5_000,
+  });
   await client.connect();
   const db = client.db(dbName);
   return { db, client };

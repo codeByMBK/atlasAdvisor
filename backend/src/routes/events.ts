@@ -1,7 +1,6 @@
 import { Router, Request, Response } from "express";
 import { z } from "zod";
 import { getMetricsDb } from "../utils/mongo.js";
-import { computeMetrics } from "../services/metrics.js";
 
 const router = Router();
 
@@ -37,18 +36,6 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     res.status(201).json({ ok: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Database write failed";
-    res.status(500).json({ error: message });
-  }
-});
-
-// GET /api/metrics : aggregate and return variant comparison metrics
-router.get("/metrics", async (_req: Request, res: Response): Promise<void> => {
-  try {
-    const db = await getMetricsDb();
-    const metrics = await computeMetrics(db);
-    res.json(metrics);
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to compute metrics";
     res.status(500).json({ error: message });
   }
 });

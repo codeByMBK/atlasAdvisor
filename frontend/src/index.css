@@ -21,6 +21,12 @@
     background-color: #020617; /* slate-950 */
   }
 
+  /* Keep app layers above body; negative z-index on children can hide behind body otherwise */
+  #root {
+    isolation: isolate;
+    min-height: 100vh;
+  }
+
   /* Custom scrollbar for webkit */
   ::-webkit-scrollbar {
     width: 6px;

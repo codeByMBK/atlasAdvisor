@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { Recommendation } from "../types/index.js";
 
 interface RecommendationCardProps {
@@ -33,6 +33,23 @@ const CATEGORY_STYLES = {
   query: "bg-orange-500/15 text-orange-400 border border-orange-500/30",
 } as const;
 
+function useCopyToClipboard(text: string): { copied: boolean; copy: () => void } {
+  const [copied, setCopied] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function copy(): void {
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  return { copied, copy };
+}
+
 async function postEvent(
   sessionId: string,
   variant: "A" | "B",
@@ -52,8 +69,8 @@ async function postEvent(
         timestamp: new Date().toISOString(),
       }),
     });
-  } catch {
-    // Event tracking failure should not affect the user experience
+  } catch (err) {
+    console.warn("[events] Failed to post:", err);
   }
 }
 
@@ -67,14 +84,15 @@ export function RecommendationCard({
   const [showFix, setShowFix] = useState(false);
   const [applied, setApplied] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const { copied, copy } = useCopyToClipboard(rec.codeExample);
 
   const sev = SEVERITY_STYLES[rec.severity];
   const cat = CATEGORY_STYLES[rec.category];
 
-  // Fire viewed event on mount
+  // Fire viewed event once on mount — intentionally omitting deps to avoid re-firing on prop changes
   useEffect(() => {
     void postEvent(sessionId, variant, "recommendation_viewed", rec);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function handleToggleFix(): void {
@@ -127,8 +145,16 @@ export function RecommendationCard({
       {showFix && (
         <div className="mb-4 animate-slide-down">
           <p className="text-slate-300 text-sm mb-3">{rec.fixSuggestion}</p>
-          <div className="bg-slate-950 border border-slate-700 rounded-lg p-4 overflow-x-auto">
-            <pre className="text-brand-500 text-xs font-mono leading-relaxed whitespace-pre-wrap">
+          <div className="relative bg-slate-950 border border-slate-700 rounded-lg overflow-x-auto">
+            <button
+              type="button"
+              onClick={copy}
+              aria-label="Copy code example"
+              className="absolute top-2 right-2 text-xs px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all"
+            >
+              {copied ? "Copied!" : "Copy"}
+            </button>
+            <pre className="p-4 pr-16 text-brand-500 text-xs font-mono leading-relaxed whitespace-pre-wrap">
               {rec.codeExample}
             </pre>
           </div>

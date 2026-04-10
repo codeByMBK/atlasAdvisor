@@ -5,18 +5,24 @@ import { analyseDatabase } from "../services/analyser.js";
 
 const router = Router();
 
-const AnalyseBodySchema = z.object({
-  connectionString: z
-    .string()
-    .min(1, "connectionString is required")
-    .refine((s) => s.startsWith("mongodb"), {
-      message: 'connectionString must start with "mongodb"',
-    }),
-  databaseName: z.string().min(1, "databaseName is required"),
+const ALLOWED_DATASETS = [
+  "sample_mflix",
+  "sample_analytics",
+  "sample_airbnb",
+  "sample_restaurants",
+  "sample_supplies",
+  "sample_weatherdata",
+  "sample_geospatial",
+  "sample_training",
+] as const;
+
+const SampleBodySchema = z.object({
+  databaseName: z.enum(ALLOWED_DATASETS),
 });
 
+// POST /api/analyse/sample — analyse a named sample dataset using SAMPLE_MONGODB_URI
 router.post("/", async (req: Request, res: Response): Promise<void> => {
-  const parsed = AnalyseBodySchema.safeParse(req.body);
+  const parsed = SampleBodySchema.safeParse(req.body);
 
   if (!parsed.success) {
     res.status(400).json({
@@ -26,7 +32,9 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { connectionString, databaseName } = parsed.data;
+  const { databaseName } = parsed.data;
+  const connectionString =
+    process.env["SAMPLE_MONGODB_URI"] ?? "mongodb://localhost:27017";
   let client;
 
   try {
@@ -46,14 +54,12 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
 
     res.json(result);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "Unknown connection error";
+    const message = err instanceof Error ? err.message : "Unknown error";
 
-    // Provide more specific error messages based on the type of error
     if (message.includes("authentication failed") || message.includes("Unauthorized")) {
       res.status(401).json({
         error: "Authentication failed",
-        details: "Invalid connection string credentials. Check username and password.",
+        details: "Invalid credentials for the sample MongoDB connection. Check SAMPLE_MONGODB_URI.",
       });
     } else if (
       message.includes("connect ECONNREFUSED") ||
@@ -61,19 +67,16 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
     ) {
       res.status(503).json({
         error: "Cannot reach MongoDB server",
-        details: "The MongoDB server is unreachable. Verify the server is running and accessible.",
+        details: "The sample MongoDB server is unreachable. Verify SAMPLE_MONGODB_URI is correct and the server is running.",
       });
     } else {
       res.status(500).json({
-        error: "Failed to connect to MongoDB or run analysis",
+        error: "Failed to connect or run analysis",
         details: message,
       });
     }
   } finally {
-    // Always closing the per-request analysis connection
-    if (client) {
-      await client.close();
-    }
+    if (client) await client.close();
   }
 });
 

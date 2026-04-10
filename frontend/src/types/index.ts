@@ -38,3 +38,8 @@ export interface VariantMetrics {
   clickThroughRate: number;
   applyRate: number;
 }
+
+export interface GlobalStats {
+  totalAnalyses: number;
+  lastUpdated: string | null;
+}
