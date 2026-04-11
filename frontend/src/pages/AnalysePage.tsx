@@ -14,7 +14,11 @@ export function AnalysePage(): React.ReactElement {
   function fetchStats(): void {
     fetch("/api/stats")
       .then((r) => r.json())
-      .then((d: GlobalStats) => setTotalAnalyses(d.totalAnalyses))
+      .then((d: GlobalStats) => {
+        // Guard: API may return an error shape (e.g. DB unreachable) where
+        // totalAnalyses is missing. Keep state null so the banner stays hidden.
+        if (typeof d.totalAnalyses === "number") setTotalAnalyses(d.totalAnalyses);
+      })
       .catch(() => { /* silent */ });
   }
 
