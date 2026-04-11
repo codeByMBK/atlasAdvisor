@@ -10,18 +10,3 @@ dist/
 .DS_Store
 .AppleDouble
 .LSOverride
-
-# Editor / AI tool directories
-.cursor/
-.claude/
-.aider*
-.continue/
-
-# Reference material / build prompts (not part of the product)
-SaaS-landing-page-main/
-AtlasAdvisor_Build_Prompt.txt
-*.Build_Prompt.txt
-
-# Screenshots / local assets not meant for the repo
-Screenshot*.png
-Screenshot*.jpg
