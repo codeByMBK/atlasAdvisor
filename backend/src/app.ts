@@ -13,6 +13,10 @@ import { computeMetrics } from "./services/metrics.js";
 
 const app = express();
 
+// Trust the first proxy hop (required on Vercel / any reverse-proxy host so
+// that express-rate-limit can read the real client IP from X-Forwarded-For).
+app.set("trust proxy", 1);
+
 // ── Middleware ──────────────────────────────────────────────────────────────
 
 app.use(helmet());
